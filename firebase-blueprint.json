@@ -1,0 +1,104 @@
+{
+  "entities": {
+    "Tournament": {
+      "title": "Tournament",
+      "description": "A sporting tournament event.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "type": "string", "enum": ["round_robin", "single_elimination", "double_elimination", "ladder"] },
+        "status": { "type": "string", "enum": ["draft", "active", "completed"] },
+        "ownerId": { "type": "string" },
+        "captains": { "type": "array", "items": { "type": "string" } },
+        "price": { "type": "number" },
+        "maxPlayers": { "type": "number", "default": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "rules": { "type": "object" }
+      },
+      "required": ["name", "type", "status", "ownerId"]
+    },
+    "Player": {
+      "title": "Player Profile",
+      "description": "User profile or player data.",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "rating": { "type": "number" }
+      },
+      "required": ["displayName"]
+    },
+    "Registration": {
+      "title": "Tournament Registration",
+      "description": "A player or team signed up for a specific tournament.",
+      "type": "object",
+      "properties": {
+        "playerId": { "type": "string" },
+        "tournamentId": { "type": "string" },
+        "teamName": { "type": "string" },
+        "checkedIn": { "type": "boolean" },
+        "paymentStatus": { "type": "string", "enum": ["unpaid", "paid"] },
+        "wins": { "type": "number" },
+        "losses": { "type": "number" },
+        "ringers": { "type": "number" },
+        "doubleRingers": { "type": "number" },
+        "pointsFor": { "type": "number" },
+        "pointsAgainst": { "type": "number" }
+      },
+      "required": ["playerId", "tournamentId"]
+    },
+    "Match": {
+      "title": "Match",
+      "description": "A single game between two players/teams.",
+      "type": "object",
+      "properties": {
+        "tournamentId": { "type": "string" },
+        "round": { "type": "number" },
+        "player1Id": { "type": "string" },
+        "player2Id": { "type": "string" },
+        "score1": { "type": "number" },
+        "score2": { "type": "number" },
+        "stats1": { 
+          "type": "object",
+          "properties": {
+            "ringers": { "type": "number" },
+            "doubles": { "type": "number" },
+            "singles": { "type": "number" }
+          }
+        },
+        "stats2": { 
+          "type": "object",
+          "properties": {
+            "ringers": { "type": "number" },
+            "doubles": { "type": "number" },
+            "singles": { "type": "number" }
+          }
+        },
+        "status": { "type": "string", "enum": ["pending", "in_progress", "completed"] },
+        "court": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["tournamentId", "player1Id", "player2Id", "status"]
+    }
+  },
+  "firestore": {
+    "tournaments": {
+      "schema": "Tournament",
+      "description": "Primary tournament records."
+    },
+    "tournaments/{tournamentId}/registrations": {
+      "schema": "Registration",
+      "description": "Participants in a specific tournament."
+    },
+    "tournaments/{tournamentId}/matches": {
+      "schema": "Match",
+      "description": "Matchups in a specific tournament."
+    },
+    "users": {
+      "schema": "Player",
+      "description": "User profile data."
+    }
+  }
+}

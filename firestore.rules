@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(ownerId) {
+      return isSignedIn() && request.auth.uid == ownerId;
+    }
+
+    function isCaptain(tournamentId) {
+      let tournament = get(/databases/$(database)/documents/tournaments/$(tournamentId)).data;
+      return isSignedIn() && (request.auth.uid == tournament.ownerId || (tournament.keys().hasAll(['captains']) && request.auth.uid in tournament.captains));
+    }
+
+    function isValidTournament(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100
+             && data.type in ['round_robin', 'single_elimination', 'double_elimination']
+             && data.status in ['draft', 'active', 'completed'];
+    }
+
+    // Tournaments
+    match /tournaments/{tournamentId} {
+      allow read: if true;
+      allow create: if isSignedIn() && isValidTournament(request.resource.data) && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isCaptain(tournamentId) && isValidTournament(request.resource.data);
+      
+      // Registrations
+      match /registrations/{registrationId} {
+        allow read: if true;
+        allow create: if isSignedIn() && (request.resource.data.playerId == request.auth.uid || isCaptain(tournamentId));
+        allow update: if isCaptain(tournamentId);
+      }
+      
+      // Matches
+      match /matches/{matchId} {
+        allow read: if true;
+        allow write: if isCaptain(tournamentId);
+      }
+    }
+
+    // Users
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if isSignedIn() && request.auth.uid == userId;
+    }
+  }
+}
