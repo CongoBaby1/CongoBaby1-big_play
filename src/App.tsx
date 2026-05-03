@@ -49,7 +49,7 @@ const Logo = () => (
 );
 
 // Public Landing Page Component
-function PublicLanding({ onEnterArena, onSignIn }: { onEnterArena: () => void; onSignIn: () => void }) {
+function PublicLanding({ onEnterArena, onSignIn, isSigningIn }: { onEnterArena: () => void; onSignIn: () => void; isSigningIn?: boolean }) {
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-orange-500 overflow-hidden relative">
       {/* Background Image */}
@@ -63,10 +63,14 @@ function PublicLanding({ onEnterArena, onSignIn }: { onEnterArena: () => void; o
       {/* Navigation (Sign In / Join) */}
       <nav className="relative z-50 flex items-center justify-end px-8 py-8 max-w-7xl mx-auto">
         <button 
+          disabled={isSigningIn}
           onClick={onSignIn} 
-          className="bg-primary hover:bg-orange-600 text-white px-10 py-4 rounded-full font-black italic uppercase tracking-widest text-[11px] transition-all shadow-[0_10px_40px_rgba(249,115,22,0.4)] hover:shadow-[0_15px_50px_rgba(249,115,22,0.6)] active:scale-95"
+          className={cn(
+            "bg-primary hover:bg-orange-600 text-white px-10 py-4 rounded-full font-black italic uppercase tracking-widest text-[11px] transition-all shadow-[0_10px_40px_rgba(249,115,22,0.4)] hover:shadow-[0_15px_50px_rgba(249,115,22,0.6)] active:scale-95",
+            isSigningIn && "opacity-50 cursor-not-allowed"
+          )}
         >
-          Sign In / Join
+          {isSigningIn ? 'SIGNING IN...' : 'Sign In / Join'}
         </button>
       </nav>
 
@@ -78,10 +82,17 @@ function PublicLanding({ onEnterArena, onSignIn }: { onEnterArena: () => void; o
           className="flex flex-col sm:flex-row items-center justify-center gap-6"
         >
           <button 
+            disabled={isSigningIn}
             onClick={onSignIn}
-            className="group relative w-full sm:w-auto px-16 py-6 bg-primary text-white rounded-2xl font-black italic uppercase tracking-widest text-sm hover:scale-105 active:scale-95 transition-all shadow-[0_20px_50px_rgba(249,115,22,0.4)] overflow-hidden"
+            className={cn(
+              "group relative w-full sm:w-auto px-16 py-6 bg-primary text-white rounded-2xl font-black italic uppercase tracking-widest text-sm hover:scale-105 active:scale-95 transition-all shadow-[0_20px_50_rgba(249,115,22,0.4)] overflow-hidden",
+              isSigningIn && "opacity-50 cursor-not-allowed"
+            )}
           >
-            <span className="relative z-10 flex items-center gap-3">Get Started <ChevronRight className="w-5 h-5" /></span>
+            <span className="relative z-10 flex items-center gap-3">
+              {isSigningIn ? 'SYSTEM LOADING...' : 'Get Started'} 
+              <ChevronRight className="w-5 h-5" />
+            </span>
             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-shimmer" />
           </button>
           
@@ -104,6 +115,7 @@ export default function App() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [isExploring, setIsExploring] = useState(false);
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   const [isDesignerMode, setIsDesignerMode] = useState(false);
 
@@ -187,8 +199,25 @@ export default function App() {
 
   if (loading) return <div className="flex h-screen items-center justify-center font-sans font-medium text-slate-500">Syncing with Big Play Tournaments...</div>;
 
+  const handleSignIn = async () => {
+    if (isSigningIn) return;
+    setIsSigningIn(true);
+    try {
+      console.log('App: signInWithGoogle button clicked');
+      await signInWithGoogle();
+    } catch (error: any) {
+      if (error.code === 'auth/cancelled-popup-request') {
+        console.warn('App: Sign-in popup request cancelled (likely concurrent call)');
+      } else {
+        console.error('App: Sign-in error caught in handler:', error);
+      }
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
+
   if (!user && !isExploring && view === 'landing') {
-    return <PublicLanding onEnterArena={() => { setIsExploring(true); setView('arena'); }} onSignIn={signInWithGoogle} />;
+    return <PublicLanding onEnterArena={() => { console.log('App: Entering arena as guest'); setIsExploring(true); setView('arena'); }} onSignIn={handleSignIn} isSigningIn={isSigningIn} />;
   }
 
   return (
@@ -288,10 +317,14 @@ export default function App() {
               </div>
             ) : (
               <button 
-                onClick={signInWithGoogle}
-                className="w-full flex items-center justify-center gap-2 text-white font-bold text-[11px] hover:text-primary transition-colors"
+                disabled={isSigningIn}
+                onClick={handleSignIn}
+                className={cn(
+                  "w-full flex items-center justify-center gap-2 text-white font-bold text-[11px] hover:text-primary transition-colors",
+                  isSigningIn && "opacity-50 cursor-not-allowed"
+                )}
               >
-                <LogIn className="w-3.5 h-3.5" /> Sign In
+                <LogIn className="w-3.5 h-3.5" /> {isSigningIn ? '...' : 'Sign In'}
               </button>
             )}
           </div>
@@ -330,7 +363,11 @@ export default function App() {
           <AnimatePresence mode="wait">
             {view === 'landing' && (
               <div className="-m-8 h-screen overflow-y-auto">
-                <PublicLanding onEnterArena={() => { setIsExploring(true); setView('arena'); }} onSignIn={user ? () => setView('profile') : signInWithGoogle} />
+                <PublicLanding 
+                  onEnterArena={() => { console.log('App: Entering arena as guest from secondary landing'); setIsExploring(true); setView('arena'); }} 
+                  onSignIn={user ? () => setView('profile') : handleSignIn} 
+                  isSigningIn={isSigningIn}
+                />
               </div>
             )}
             {view === 'arena' && (
@@ -342,10 +379,14 @@ export default function App() {
                   </div>
                   {isExploring && (
                     <button 
-                      onClick={signInWithGoogle}
-                      className="bg-primary hover:bg-orange-600 text-white px-8 py-3 rounded-full font-black italic uppercase tracking-widest text-[10px] transition-all shadow-lg active:scale-95"
+                      disabled={isSigningIn}
+                      onClick={handleSignIn}
+                      className={cn(
+                        "bg-primary hover:bg-orange-600 text-white px-8 py-3 rounded-full font-black italic uppercase tracking-widest text-[10px] transition-all shadow-lg active:scale-95",
+                        isSigningIn && "opacity-50 cursor-not-allowed"
+                      )}
                     >
-                      Sign In to Compete
+                      {isSigningIn ? 'Signing In...' : 'Sign In to Compete'}
                     </button>
                   )}
                 </div>
@@ -396,10 +437,14 @@ export default function App() {
                         <p className="text-slate-500 text-sm">Sign in to track your ScoreMagic™ stats, view your performance history, and manage your registrations.</p>
                     </div>
                     <button 
-                        onClick={signInWithGoogle}
-                        className="bg-slate-800 text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-900 transition-all"
+                        disabled={isSigningIn}
+                        onClick={handleSignIn}
+                        className={cn(
+                            "bg-slate-800 text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-900 transition-all",
+                            isSigningIn && "opacity-50"
+                        )}
                     >
-                        Sign in with Google
+                        {isSigningIn ? 'Signing In...' : 'Sign in with Google'}
                     </button>
                 </div>
               )
