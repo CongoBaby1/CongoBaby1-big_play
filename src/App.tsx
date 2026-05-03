@@ -51,56 +51,53 @@ const Logo = () => (
 // Public Landing Page Component
 function PublicLanding({ onEnterArena, onSignIn, isSigningIn }: { onEnterArena: () => void; onSignIn: () => void; isSigningIn?: boolean }) {
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-orange-500 overflow-hidden relative">
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-white/20 overflow-hidden relative">
       {/* Background Image */}
       <div 
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat transition-all duration-1000"
-        style={{ backgroundImage: "url('https://i.imgur.com/Kky4wq3.png')" }}
+        style={{ backgroundImage: "url('https://i.imgur.com/X7cuO6z.png')" }}
       >
         <div className="absolute inset-0 bg-black/30" /> {/* Slightly darker overlay for contrast */}
       </div>
 
-      {/* Navigation (Sign In / Join) */}
-      <nav className="relative z-50 flex items-center justify-end px-8 py-8 max-w-7xl mx-auto">
-        <button 
-          disabled={isSigningIn}
-          onClick={onSignIn} 
-          className={cn(
-            "bg-primary hover:bg-orange-600 text-white px-10 py-4 rounded-full font-black italic uppercase tracking-widest text-[11px] transition-all shadow-[0_10px_40px_rgba(249,115,22,0.4)] hover:shadow-[0_15px_50px_rgba(249,115,22,0.6)] active:scale-95",
-            isSigningIn && "opacity-50 cursor-not-allowed"
-          )}
-        >
-          {isSigningIn ? 'SIGNING IN...' : 'Sign In / Join'}
-        </button>
-      </nav>
-
-      {/* Hero Section (Get Started / Enter Arena) */}
-      <main className="relative z-10 min-h-[70vh] flex flex-col items-center justify-end pb-32 px-8 text-center">
+      {/* Hero Section (Get Started / Enter Arena / Sign In) */}
+      <main className="relative z-10 min-h-screen flex flex-col items-center justify-end pb-56 px-8 text-center">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-6"
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-5xl"
         >
+          <button 
+            disabled={isSigningIn}
+            onClick={onSignIn} 
+            className={cn(
+              "group w-full sm:w-auto px-8 py-3.5 sm:px-12 sm:py-5 bg-transparent border border-white/60 text-white rounded-2xl font-black italic uppercase tracking-widest text-xs sm:text-sm hover:bg-white/5 transition-all flex items-center justify-center",
+              isSigningIn && "opacity-50 cursor-not-allowed"
+            )}
+          >
+            {isSigningIn ? 'SIGNING IN...' : 'Sign In / Join'}
+          </button>
+
           <button 
             disabled={isSigningIn}
             onClick={onSignIn}
             className={cn(
-              "group relative w-full sm:w-auto px-16 py-6 bg-primary text-white rounded-2xl font-black italic uppercase tracking-widest text-sm hover:scale-105 active:scale-95 transition-all shadow-[0_20px_50_rgba(249,115,22,0.4)] overflow-hidden",
+              "group relative w-full sm:w-auto px-8 py-3.5 sm:px-12 sm:py-5 bg-transparent text-white rounded-2xl font-black italic uppercase tracking-widest text-xs sm:text-sm hover:scale-105 active:scale-95 transition-all border border-white/60 overflow-hidden flex items-center justify-center",
               isSigningIn && "opacity-50 cursor-not-allowed"
             )}
           >
-            <span className="relative z-10 flex items-center gap-3">
+            <span className="relative z-10 flex items-center gap-2 sm:gap-3">
               {isSigningIn ? 'SYSTEM LOADING...' : 'Get Started'} 
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </span>
-            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-shimmer" />
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:animate-shimmer" />
           </button>
           
           <button 
             onClick={onEnterArena}
-            className="group w-full sm:w-auto px-16 py-6 bg-white/5 border border-white/20 text-white rounded-2xl font-black italic uppercase tracking-widest text-sm hover:bg-white/10 transition-all backdrop-blur-xl flex items-center gap-3"
+            className="group w-full sm:w-auto px-8 py-3.5 sm:px-12 sm:py-5 bg-transparent border border-white/60 text-white rounded-2xl font-black italic uppercase tracking-widest text-xs sm:text-sm hover:bg-white/5 transition-all flex items-center justify-center gap-2 sm:gap-3"
           >
-            View Games <Flame className="w-5 h-5 text-orange-500 group-hover:animate-pulse" />
+            View Games <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-white/70 group-hover:animate-pulse" />
           </button>
         </motion.div>
       </main>
