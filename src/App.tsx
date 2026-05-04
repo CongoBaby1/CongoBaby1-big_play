@@ -180,21 +180,31 @@ export default function App() {
   }, []);
 
   const handleCreateTournament = async (name: string, type: Tournament['type'], price: number, maxPlayers: number) => {
-    if (!user) return;
-    const id = await tournamentService.createTournament({
-      name,
-      type,
-      price,
-      maxPlayers,
-      ownerId: user.uid,
-      description: 'New tournament'
-    });
-    if (id) {
-      setActiveTournamentId(id);
-      setView('tournament');
-      // Refresh list
-      const data = await tournamentService.getTournaments();
-      if (data) setTournaments(data);
+    const effectiveUser = user || (isDesignerMode ? { uid: 'designer', displayName: 'Designer', email: 'mtgloanpro@gmail.com' } as User : null);
+    if (!effectiveUser) {
+      alert("You must be signed in to create a tournament.");
+      return;
+    }
+    
+    try {
+      const id = await tournamentService.createTournament({
+        name,
+        type,
+        price,
+        maxPlayers,
+        ownerId: effectiveUser.uid,
+        description: 'New tournament'
+      });
+      if (id) {
+        setActiveTournamentId(id);
+        setView('tournament');
+        // Refresh list
+        const data = await tournamentService.getTournaments();
+        if (data) setTournaments(data);
+      }
+    } catch (error) {
+      console.error('Failed to create tournament:', error);
+      alert("FAILED TO LAUNCH: Check your connection or permissions. If you just added authorized domains, it might take a minute to propogate.");
     }
   };
 
@@ -417,6 +427,7 @@ export default function App() {
                 key="tournament" 
                 tournamentId={activeTournamentId} 
                 user={user} 
+                isSystemAdmin={isSystemAdmin}
                 onBack={() => setView(hasCommandAccess ? 'admin' : 'arena')} 
               />
             )}
@@ -427,7 +438,7 @@ export default function App() {
               <PlayersView key="players" />
             )}
             {view === 'clubs' && (
-              <ClubsView key="clubs" user={user} />
+              <ClubsView key="clubs" user={user} isSystemAdmin={isSystemAdmin} />
             )}
             {view === 'rankings' && (
               <RankingsView key="rankings" />
@@ -839,9 +850,10 @@ interface TournamentViewProps {
   user: User | null;
   onBack?: () => void;
   key?: string;
+  isSystemAdmin?: boolean;
 }
 
-function TournamentView({ tournamentId, user, onBack }: TournamentViewProps) {
+function TournamentView({ tournamentId, user, onBack, isSystemAdmin }: TournamentViewProps) {
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
@@ -859,7 +871,7 @@ function TournamentView({ tournamentId, user, onBack }: TournamentViewProps) {
   if (!tournament) return <div className="p-20 text-center font-sans font-bold text-slate-300 uppercase animate-pulse">Syncing Event Stream...</div>;
 
   const isOwner = user?.uid === tournament.ownerId;
-  const isCaptain = isOwner || (user && tournament.captains?.includes(user.uid));
+  const isCaptain = isOwner || (user && tournament.captains?.includes(user.uid)) || isSystemAdmin;
   const canManage = isCaptain;
 
   return (
@@ -1258,7 +1270,7 @@ function PlayersView() {
   );
 }
 
-function ClubsView({ user }: { user: User | null; key?: string }) {
+function ClubsView({ user, isSystemAdmin }: { user: User | null; isSystemAdmin?: boolean; key?: string }) {
   const [clubs, setClubs] = useState<Club[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [name, setName] = useState('');
@@ -1271,12 +1283,14 @@ function ClubsView({ user }: { user: User | null; key?: string }) {
   }, []);
 
   const handleCreateClub = async () => {
-    if (!user) return;
+    const effectiveUser = user || (isSystemAdmin ? { uid: 'designer', email: 'mtgloanpro@gmail.com' } as User : null);
+    if (!effectiveUser) return;
+    
     await clubService.createClub({
       name,
       location,
       description,
-      ownerId: user.uid
+      ownerId: effectiveUser.uid
     });
     setIsCreating(false);
     setName('');
@@ -1291,7 +1305,7 @@ function ClubsView({ user }: { user: User | null; key?: string }) {
           <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Clubs & Venues</h2>
           <p className="text-slate-500 font-medium">Home bases for tournaments and professional practice.</p>
         </div>
-        {user && (
+        {(user || isSystemAdmin) && (
           <button 
             onClick={() => setIsCreating(true)}
             className="bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-sm"

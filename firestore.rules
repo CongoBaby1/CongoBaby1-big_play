@@ -22,7 +22,7 @@ service cloud.firestore {
 
     function isValidTournament(data) {
       return data.name is string && data.name.size() > 0 && data.name.size() <= 100
-             && data.type in ['round_robin', 'single_elimination', 'double_elimination']
+             && data.type in ['round_robin', 'single_elimination', 'double_elimination', 'ladder']
              && data.status in ['draft', 'active', 'completed'];
     }
 
