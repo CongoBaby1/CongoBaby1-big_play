@@ -129,6 +129,7 @@ export default function App() {
     const handlePathChange = () => {
       if (window.location.pathname === '/petegould') {
         setIsDesignerMode(true);
+        setView('admin');
         // Silently clear the path to keep it clean
         history.replaceState(null, "", "/");
       }
@@ -139,7 +140,7 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePathChange);
   }, []);
 
-  const isSystemAdmin = isDesignerMode;
+  const isSystemAdmin = isDesignerMode || user?.email === 'mtgloanpro@gmail.com';
   const isCaptain = tournaments.some(t => t.ownerId === user?.uid);
   const hasCommandAccess = isSystemAdmin || isCaptain;
 
@@ -397,11 +398,12 @@ export default function App() {
                 <LandingView key="arena" tournaments={tournaments} onSelect={navigateToTournament} hideTitle />
               </div>
             )}
-            {view === 'admin' && user && (
+            {view === 'admin' && (isSystemAdmin || user) && (
               <AdminDashboardView 
                 key="admin" 
-                user={user} 
+                user={user || { displayName: 'Designer', email: 'mtgloanpro@gmail.com', uid: 'designer' } as User} 
                 tournaments={tournaments} 
+                isSystemAdmin={isSystemAdmin}
                 onCreateTournament={() => setView('create')}
                 onSelectTournament={navigateToTournament}
                 setView={setView}
@@ -742,10 +744,11 @@ interface AdminDashboardViewProps {
   onCreateTournament: () => void;
   onSelectTournament: (id: string) => void;
   key?: string;
+  isSystemAdmin?: boolean;
 }
 
-function AdminDashboardView({ user, tournaments, onCreateTournament, onSelectTournament, setView }: AdminDashboardViewProps & { setView: (v: any) => void }) {
-  const myTournaments = tournaments.filter(t => t.ownerId === user.uid);
+function AdminDashboardView({ user, tournaments, onCreateTournament, onSelectTournament, setView, isSystemAdmin }: AdminDashboardViewProps & { setView: (v: any) => void }) {
+  const myTournaments = isSystemAdmin ? tournaments : tournaments.filter(t => t.ownerId === user.uid);
   
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12">
@@ -753,7 +756,9 @@ function AdminDashboardView({ user, tournaments, onCreateTournament, onSelectTou
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-800 rounded-3xl p-10 text-white shadow-2xl relative overflow-hidden">
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-4">
-            <div className="px-3 py-1 bg-red-500 rounded text-[10px] font-black uppercase tracking-widest">Captain Control</div>
+            <div className={`px-3 py-1 ${isSystemAdmin ? 'bg-indigo-600' : 'bg-red-500'} rounded text-[10px] font-black uppercase tracking-widest`}>
+              {isSystemAdmin ? 'System Control' : 'Captain Control'}
+            </div>
             <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">Big Play Network</span>
           </div>
           <h2 className="text-4xl font-black italic tracking-tighter mb-2">WELCOME COMMANDER, {user.displayName?.split(' ')[0]}</h2>
@@ -772,7 +777,9 @@ function AdminDashboardView({ user, tournaments, onCreateTournament, onSelectTou
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-black italic uppercase tracking-tighter text-slate-800">My Live Events</h3>
+            <h3 className="text-xl font-black italic uppercase tracking-tighter text-slate-800">
+              {isSystemAdmin ? 'Global Event Grid' : 'My Live Events'}
+            </h3>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
