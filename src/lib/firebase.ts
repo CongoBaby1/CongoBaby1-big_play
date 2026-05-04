@@ -1,28 +1,30 @@
 import { initializeApp } from 'firebase/app';
 import { 
-  getAuth, 
+  initializeAuth, 
+  browserLocalPersistence, 
+  browserPopupRedirectResolver, 
   GoogleAuthProvider, 
   signInWithPopup, 
-  signOut, 
-  setPersistence, 
-  indexedDBLocalPersistence,
-  browserPopupRedirectResolver
+  signOut 
 } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
 
-// Apply persistence settings immediately
-setPersistence(auth, indexedDBLocalPersistence).catch(err => console.error("Persistence failed:", err));
+// Use initializeAuth to explicitly set persistence and resolver
+// browserLocalPersistence is more robust than sessionStorage in partitioned environments
+export const auth = initializeAuth(app, {
+  persistence: browserLocalPersistence,
+  popupRedirectResolver: browserPopupRedirectResolver,
+});
+
+export const googleProvider = new GoogleAuthProvider();
 
 export const signInWithGoogle = async () => {
   try {
     console.log('Initiating Google Sign-In with Resolver...');
-    // Using browserPopupRedirectResolver explicitly helps in environments with storage partitioning
     const result = await signInWithPopup(auth, googleProvider, browserPopupRedirectResolver);
     console.log('Sign-in successful:', result.user.email);
     return result;
