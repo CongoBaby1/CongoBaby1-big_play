@@ -2,6 +2,7 @@ import {
   collection, 
   addDoc, 
   updateDoc, 
+  deleteDoc,
   doc, 
   getDocs, 
   query, 
@@ -89,6 +90,15 @@ export const tournamentService = {
       return docRef.id;
     } catch (e) {
       handleFirestoreError(e, OperationType.CREATE, path);
+    }
+  },
+
+  async unregisterPlayer(tournamentId: string, registrationId: string) {
+    const path = `${TOURNAMENTS_COL}/${tournamentId}/registrations/${registrationId}`;
+    try {
+      await deleteDoc(doc(db, path));
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, path);
     }
   },
 

@@ -37,6 +37,7 @@ service cloud.firestore {
         allow read: if true;
         allow create: if isSignedIn() && (request.resource.data.playerId == request.auth.uid || isCaptain(tournamentId));
         allow update: if isCaptain(tournamentId);
+        allow delete: if isCaptain(tournamentId) || (isSignedIn() && resource.data.playerId == request.auth.uid);
       }
       
       // Matches

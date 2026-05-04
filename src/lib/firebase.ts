@@ -14,12 +14,27 @@ export const signInWithGoogle = async () => {
     const result = await signInWithPopup(auth, googleProvider);
     console.log('Sign-in successful:', result.user.email);
     return result;
-  } catch (error) {
-    console.error('Sign-in failed:', error);
-    if (error instanceof Error) {
-      if (error.message.includes('auth/unauthorized-domain')) {
-        console.error('ERROR: This domain is not authorized in the Firebase Console. Please add your Vercel domain to the "Authorized Domains" list in Authentication Settings.');
-      }
+  } catch (error: any) {
+    console.error('Sign-in failed. Error code:', error.code);
+    console.error('Sign-in failed. Error message:', error.message);
+    
+    if (error.code === 'auth/unauthorized-domain') {
+      const currentDomain = window.location.hostname;
+      const projectId = firebaseConfig.projectId;
+      const consoleUrl = `https://console.firebase.google.com/u/0/project/${projectId}/authentication/settings`;
+      
+      console.error('UNAUTHORIZED DOMAIN:', currentDomain);
+      alert(`AUTH ERROR: This domain (${currentDomain}) is not authorized in your Firebase Project.\n\n` +
+            `1. Go to: ${consoleUrl}\n` +
+            `2. Click "Authorized Domains"\n` +
+            `3. Add "${currentDomain}" to the list.\n\n` +
+            `Note: Ensure you are logged into Google with mtgloanpro@gmail.com`);
+    } else if (error.code === 'auth/popup-blocked') {
+      alert('AUTH ERROR: The sign-in popup was blocked by your browser. Please enable popups for this site and try again.');
+    } else if (error.code === 'auth/cancelled-popup-request') {
+      console.warn('Sign-in popup request cancelled.');
+    } else {
+      alert(`Sign-in failed: ${error.message || 'Unknown error'}`);
     }
     throw error;
   }

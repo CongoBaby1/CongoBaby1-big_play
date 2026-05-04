@@ -68,26 +68,34 @@ function PublicLanding({ onEnterArena, onSignIn, isSigningIn }: { onEnterArena: 
           className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-5xl"
         >
           <button 
+            type="button"
             disabled={isSigningIn}
-            onClick={onSignIn} 
+            onClick={() => {
+              console.log('Landing: Sign In clicked');
+              onSignIn();
+            }} 
             className={cn(
               "group w-full sm:w-auto px-8 py-3.5 sm:px-12 sm:py-5 bg-transparent border border-white/60 text-white rounded-2xl font-black italic uppercase tracking-widest text-xs sm:text-sm hover:bg-white/5 transition-all flex items-center justify-center",
               isSigningIn && "opacity-50 cursor-not-allowed"
             )}
           >
-            {isSigningIn ? 'SIGNING IN...' : 'Sign In / Join'}
+            {isSigningIn ? 'CONNECTING...' : 'Sign In / Join'}
           </button>
 
           <button 
+            type="button"
             disabled={isSigningIn}
-            onClick={onSignIn}
+            onClick={() => {
+              console.log('Landing: Get Started clicked');
+              onSignIn();
+            }}
             className={cn(
               "group relative w-full sm:w-auto px-8 py-3.5 sm:px-12 sm:py-5 bg-transparent text-white rounded-2xl font-black italic uppercase tracking-widest text-xs sm:text-sm hover:scale-105 active:scale-95 transition-all border border-white/60 overflow-hidden flex items-center justify-center",
               isSigningIn && "opacity-50 cursor-not-allowed"
             )}
           >
             <span className="relative z-10 flex items-center gap-2 sm:gap-3">
-              {isSigningIn ? 'SYSTEM LOADING...' : 'Get Started'} 
+              {isSigningIn ? 'LOADING...' : 'Get Started'} 
               <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </span>
             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:animate-shimmer" />
@@ -200,14 +208,10 @@ export default function App() {
     if (isSigningIn) return;
     setIsSigningIn(true);
     try {
-      console.log('App: signInWithGoogle button clicked');
+      console.log('App: Initiating sign-in process...');
       await signInWithGoogle();
     } catch (error: any) {
-      if (error.code === 'auth/cancelled-popup-request') {
-        console.warn('App: Sign-in popup request cancelled (likely concurrent call)');
-      } else {
-        console.error('App: Sign-in error caught in handler:', error);
-      }
+      console.error('App: Sign-in handler caught error:', error);
     } finally {
       setIsSigningIn(false);
     }
@@ -377,13 +381,16 @@ export default function App() {
                   {isExploring && (
                     <button 
                       disabled={isSigningIn}
-                      onClick={handleSignIn}
+                      onClick={() => {
+                        console.log('Arena: Sign In clicked');
+                        handleSignIn();
+                      }}
                       className={cn(
                         "bg-primary hover:bg-orange-600 text-white px-8 py-3 rounded-full font-black italic uppercase tracking-widest text-[10px] transition-all shadow-lg active:scale-95",
                         isSigningIn && "opacity-50 cursor-not-allowed"
                       )}
                     >
-                      {isSigningIn ? 'Signing In...' : 'Sign In to Compete'}
+                      {isSigningIn ? 'CONNECTING...' : 'Sign In to Compete'}
                     </button>
                   )}
                 </div>
@@ -955,12 +962,32 @@ function TournamentView({ tournamentId, user, onBack }: TournamentViewProps) {
         {activeTab === 'players' && (
           <motion.div key="players" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {registrations.map(r => (
-                <div key={r.id} className="bg-white border border-slate-200 rounded-2xl p-6 flex justify-between items-center card-shadow">
-                    <div>
-                        <p className="font-bold text-lg text-slate-800 leading-tight">{r.teamName}</p>
+                <div key={r.id} className="bg-white border border-slate-200 rounded-2xl p-6 flex justify-between items-center card-shadow group relative">
+                    <div className="flex-1 min-w-0">
+                        <p className="font-bold text-lg text-slate-800 leading-tight truncate">{r.teamName}</p>
                         <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">Signed Up</p>
                     </div>
-                    <div className={cn("w-2 h-2 rounded-full ring-4", r.checkedIn ? "bg-green-500 ring-green-100" : "bg-red-500 ring-red-500/10")} />
+                    <div className="flex items-center gap-4">
+                        <div className={cn("w-2 h-2 rounded-full ring-4 shrink-0", r.checkedIn ? "bg-green-500 ring-green-100" : "bg-red-500 ring-red-500/10")} />
+                        {(canManage || r.playerId === user?.uid) && (
+                          <button 
+                            onClick={async () => {
+                              const isSelf = r.playerId === user?.uid;
+                              const message = isSelf 
+                                ? "Unregister from this tournament? This cannot be undone."
+                                : `Remove ${r.teamName} from this tournament?`;
+                              
+                              if (confirm(message)) {
+                                await tournamentService.unregisterPlayer(tournamentId, r.id);
+                              }
+                            }}
+                            className="p-2 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 rounded-lg shrink-0"
+                            title={r.playerId === user?.uid ? "Unregister" : "Remove Player"}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                    </div>
                 </div>
             ))}
             {registrations.length === 0 && (
